@@ -31,13 +31,13 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
 
   const planets: Planet[] = [
     { name: 'Mercury', radius: 0.5, distance: 8, speed: 0.02, color: 0x8c7853, angle: 0 },
-    { name: 'Venus', radius: 0.7, distance: 11, speed: 0.015, color: 0xffa500, angle: 0 },
-    { name: 'Earth', radius: 0.8, distance: 15, speed: 0.01, color: 0x6b93d6, angle: 0 },
-    { name: 'Mars', radius: 0.6, distance: 20, speed: 0.008, color: 0xcd5c5c, angle: 0 },
-    { name: 'Jupiter', radius: 2.5, distance: 30, speed: 0.005, color: 0xd2691e, angle: 0 },
-    { name: 'Saturn', radius: 2.2, distance: 40, speed: 0.003, color: 0xfad5a5, angle: 0 },
-    { name: 'Uranus', radius: 1.5, distance: 50, speed: 0.002, color: 0x4fd0e3, angle: 0 },
-    { name: 'Neptune', radius: 1.4, distance: 60, speed: 0.001, color: 0x4169e1, angle: 0 },
+    { name: 'Venus', radius: 0.7, distance: 11, speed: 0.015, color: 0xffa500, angle: Math.PI / 4 },
+    { name: 'Earth', radius: 0.8, distance: 15, speed: 0.01, color: 0x6b93d6, angle: Math.PI / 2 },
+    { name: 'Mars', radius: 0.6, distance: 20, speed: 0.008, color: 0xcd5c5c, angle: 3 * Math.PI / 4 },
+    { name: 'Jupiter', radius: 2.5, distance: 30, speed: 0.005, color: 0xd2691e, angle: Math.PI },
+    { name: 'Saturn', radius: 2.2, distance: 40, speed: 0.003, color: 0xfad5a5, angle: 5 * Math.PI / 4 },
+    { name: 'Uranus', radius: 1.5, distance: 50, speed: 0.002, color: 0x4fd0e3, angle: 3 * Math.PI / 2 },
+    { name: 'Neptune', radius: 1.4, distance: 60, speed: 0.001, color: 0x4169e1, angle: 7 * Math.PI / 4 },
   ];
 
   useEffect(() => {
@@ -102,8 +102,8 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 
-    // Create planets with enhanced materials for visibility
-    const planetMeshes: Planet[] = planets.map((planet, index) => {
+    // Create planets with proper spacing and visibility
+    const planetMeshes: Planet[] = planets.map((planet) => {
       const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
       const material = new THREE.MeshLambertMaterial({ 
         color: planet.color,
@@ -111,26 +111,25 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
       });
       const mesh = new THREE.Mesh(geometry, material);
       
-      // Position planets at different starting angles for better visibility
-      const startAngle = (index * Math.PI * 2) / planets.length;
-      mesh.position.x = Math.cos(startAngle) * planet.distance;
-      mesh.position.z = Math.sin(startAngle) * planet.distance;
+      // Position planets using their initial angles
+      mesh.position.x = Math.cos(planet.angle) * planet.distance;
+      mesh.position.z = Math.sin(planet.angle) * planet.distance;
+      mesh.position.y = 0; // Keep all planets on the same plane
       mesh.userData = { name: planet.name };
       scene.add(mesh);
 
-      console.log(`Created ${planet.name} at position:`, mesh.position);
+      console.log(`Created ${planet.name} at distance ${planet.distance}, angle ${planet.angle}, position:`, mesh.position);
 
       return {
         ...planet,
-        mesh,
-        angle: startAngle
+        mesh
       };
     });
 
     planetsRef.current = planetMeshes;
 
-    // Camera position - adjusted for better view
-    camera.position.set(0, 50, 100);
+    // Camera position - adjusted for better view of all planets
+    camera.position.set(0, 80, 120);
     camera.lookAt(0, 0, 0);
 
     // Mouse controls
@@ -180,7 +179,7 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
 
     const handleWheel = (event: WheelEvent) => {
       const distance = camera.position.length();
-      const newDistance = Math.max(20, Math.min(300, distance + event.deltaY * 0.1));
+      const newDistance = Math.max(30, Math.min(400, distance + event.deltaY * 0.1));
       camera.position.normalize().multiplyScalar(newDistance);
     };
 
