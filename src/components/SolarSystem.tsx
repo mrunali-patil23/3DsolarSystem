@@ -67,20 +67,23 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
     raycasterRef.current = raycaster;
     mouseVectorRef.current = mouse;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+    // Lighting - Enhanced for better planet visibility
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.PointLight(0xffa500, 2, 100);
+    const sunLight = new THREE.PointLight(0xffa500, 3, 200);
     sunLight.position.set(0, 0, 0);
     scene.add(sunLight);
 
-    // Create Sun
+    // Additional directional light to ensure planets are visible
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 5);
+    scene.add(directionalLight);
+
+    // Create Sun - Fixed material
     const sunGeometry = new THREE.SphereGeometry(3, 32, 32);
     const sunMaterial = new THREE.MeshBasicMaterial({ 
-      color: 0xffa500,
-      emissive: 0xffaa00,
-      emissiveIntensity: 0.3
+      color: 0xffa500
     });
     const sun = new THREE.Mesh(sunGeometry, sunMaterial);
     scene.add(sun);
@@ -99,26 +102,35 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
     const stars = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(stars);
 
-    // Create planets
-    const planetMeshes: Planet[] = planets.map(planet => {
+    // Create planets with enhanced materials for visibility
+    const planetMeshes: Planet[] = planets.map((planet, index) => {
       const geometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-      const material = new THREE.MeshPhongMaterial({ color: planet.color });
+      const material = new THREE.MeshLambertMaterial({ 
+        color: planet.color,
+        transparent: false
+      });
       const mesh = new THREE.Mesh(geometry, material);
       
-      mesh.position.x = planet.distance;
+      // Position planets at different starting angles for better visibility
+      const startAngle = (index * Math.PI * 2) / planets.length;
+      mesh.position.x = Math.cos(startAngle) * planet.distance;
+      mesh.position.z = Math.sin(startAngle) * planet.distance;
       mesh.userData = { name: planet.name };
       scene.add(mesh);
 
+      console.log(`Created ${planet.name} at position:`, mesh.position);
+
       return {
         ...planet,
-        mesh
+        mesh,
+        angle: startAngle
       };
     });
 
     planetsRef.current = planetMeshes;
 
-    // Camera position
-    camera.position.set(0, 30, 80);
+    // Camera position - adjusted for better view
+    camera.position.set(0, 50, 100);
     camera.lookAt(0, 0, 0);
 
     // Mouse controls
@@ -168,7 +180,7 @@ export const SolarSystem = ({ planetSpeeds, isPaused, onPlanetHover }: SolarSyst
 
     const handleWheel = (event: WheelEvent) => {
       const distance = camera.position.length();
-      const newDistance = Math.max(20, Math.min(200, distance + event.deltaY * 0.1));
+      const newDistance = Math.max(20, Math.min(300, distance + event.deltaY * 0.1));
       camera.position.normalize().multiplyScalar(newDistance);
     };
 
